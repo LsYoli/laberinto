@@ -1,26 +1,19 @@
 /**
 * @file Avatar.cpp
-* @brief Declaracion de los metodos de la clase Avatar para la creacion del avatar y la simulacion de su movimiento
+* @brief Implementación de las clases Avatar, AvatarOriginal y AvatarInnovador
 *
 * @details 
-* - Se importan las librerias necesarias para la manipulacion de cadenas, vectores, numeros aleatorios y entradas/salidas.
-* - se define la clase Avatar encargada de representar al avatar, junto con sus atributos.
-* - Se implementa "posicion_inicial()" que se encarga de generar una posicion inicial aleatoria para el avatar.
-* - desarrolla "mover_avatar()" que se encarga de escoger una direccion aleatoria y modifica la ubicacion del avatar en base a esa dirrección (de igual forma modifica la interfaz que se le mostrara al ususario).
-* - Se implementa "sobrevivencia()" que se encarga de verificar si el avatar sigue vivo o no y pone una "x" en la posicion en la que murio.
+* - Clase base Avatar con métodos comunes
+* - AvatarOriginal: movimiento aleatorio (implementación original)
+* - AvatarInnovador: movimiento en forma de L como caballo de ajedrez
+* - Uso de polimorfismo para diferentes tipos de movimiento
 * 
 * @bug_fixer [Daniel Andres Micolta Gongora]
 * @mail [micolta.daniel@correounivalle.edu.co]
 * @author [Luis Santiago Arenas Hincapie] 
 * @mail [luis.arenas@correounivalle.edu.co]
 * @date 2025-09-02
-* @version 1.1
-*
-* @comentarios: 
-* - se utiliza la libreria cstdlib para generar numeros aleatorios.
-* - se utiliza la funcion "std::srand(time(nullptr));" para generar un numero aleatorio diferente cada vez que se ejecuta el programa.
-* - Se utiliza un metodo switch para modificar la ubicacion del avatar en base a la dirreccion escogida.
-* - Se utiliza un metodo do while para que el avatar no se salga del laberinto.
+* @version 2.0
 */
 #include <iostream>
 #include <string>
@@ -29,49 +22,123 @@
 #include "Avatar.h"
 #include "Mapa.h"
 
+// Métodos de la clase base Avatar
 bool Avatar::posicion_inicial(Print &print, Mapa &mapa){
   std::vector<int> pos_inicial = {0,0};
-  std::srand(time(nullptr)); // Generar una semilla basada en el tiempo actual (ayuda para que los numeros aleatorios sean diferentes cada vez)
-  pos_inicial[0] = rand() % 10; // #fila
-  pos_inicial[1] = rand() % 10; // #columna
+  std::srand(time(nullptr));
+  pos_inicial[0] = rand() % 10;
+  pos_inicial[1] = rand() % 10;
   ubicacion = pos_inicial;
-  std::cout << "La posicion inicial: " << ubicacion[0] << ", " <<   ubicacion[1] <<std::endl; 
-  vivo =  mapa.obtener_valor(ubicacion);
-    if (!vivo) {
-      print.guardar_recorrido(ubicacion, dirreccion, vivo);
-    }
-  return vivo;
-}
-
-void Avatar::mover_avatar(Print &print) {
-  do {
-    dirreccion = rand() % 4; // 0: arriba, 1: derecha, 2: abajo, 3: izquierda
-  } while (ubicacion[0] - 1 < 0 || ubicacion[0] + 1 > 9 || ubicacion[1] + 1 > 9 || ubicacion[1] - 1 < 0); // el ciclo se repite hasta que se encuentre una dirreccion valida
-  print.guardar_recorrido(ubicacion, dirreccion, vivo); // Modifica la dirreccion en la que se mueve el avatar antes de moverse
-  switch (dirreccion){
-    case 0:
-      ubicacion[0] -= 1; // el avatar se mueve hacia arriba
-      break;
-    case 1:
-      ubicacion[1] += 1; // el avatar se mueve hacia la derecha
-      break;
-    case 2:
-      ubicacion[0] += 1; // el avatar se mueve hacia abajo
-      break;
-    case 3:
-      ubicacion[1] -= 1; // el avatar se mueve hacia la izquierda
-      break; 
+  std::cout << "La posicion inicial: " << ubicacion[0] << ", " << ubicacion[1] << std::endl; 
+  vivo = mapa.obtener_valor(ubicacion);
+  if (!vivo) {
+    print.guardar_recorrido(ubicacion, dirreccion, vivo);
   }
-  std::cout << "La posicion actual: " << ubicacion[0] << ", " <<   ubicacion[1] << std::endl;
+  return vivo;
 }
 
 bool Avatar::sobrevivencia(Mapa &mapa, Print &print){
   vivo = mapa.obtener_valor(ubicacion);
   if (!vivo) {
-    print.guardar_recorrido(ubicacion, dirreccion, vivo);  // si el avatar muere, se guarda la posicion en la que murio
+    print.guardar_recorrido(ubicacion, dirreccion, vivo);
   }
   return vivo;
 }
+
+// Implementación AvatarOriginal (movimiento aleatorio)
+void AvatarOriginal::mover_avatar(Print &print) {
+  do {
+    dirreccion = rand() % 4; // 0: arriba, 1: derecha, 2: abajo, 3: izquierda
+  } while ((dirreccion == 0 && ubicacion[0] - 1 < 0) || 
+           (dirreccion == 1 && ubicacion[1] + 1 > 9) ||
+           (dirreccion == 2 && ubicacion[0] + 1 > 9) ||
+           (dirreccion == 3 && ubicacion[1] - 1 < 0));
   
+  print.guardar_recorrido(ubicacion, dirreccion, vivo);
+  
+  switch (dirreccion){
+    case 0:
+      ubicacion[0] -= 1; // arriba
+      break;
+    case 1:
+      ubicacion[1] += 1; // derecha
+      break;
+    case 2:
+      ubicacion[0] += 1; // abajo
+      break;
+    case 3:
+      ubicacion[1] -= 1; // izquierda
+      break; 
+  }
+  std::cout << "La posicion actual: " << ubicacion[0] << ", " << ubicacion[1] << std::endl;
+}
 
+// Implementación AvatarInnovador (movimiento en L)
+bool AvatarInnovador::es_movimiento_valido(int fila, int columna) {
+  return (fila >= 0 && fila < 10 && columna >= 0 && columna < 10);
+}
 
+void AvatarInnovador::mostrar_movimientos_validos(Mapa &mapa) {
+  std::cout << "\nMovimientos validos en forma de L:" << std::endl;
+  int contador = 1;
+  
+  for (int i = 0; i < movimientos_l.size(); i++) {
+    int nueva_fila = ubicacion[0] + movimientos_l[i][0];
+    int nueva_columna = ubicacion[1] + movimientos_l[i][1];
+    
+    if (es_movimiento_valido(nueva_fila, nueva_columna)) {
+      std::cout << contador << ". Mover a (" << nueva_fila << "," << nueva_columna << ")" << std::endl;
+      contador++;
+    }
+  }
+}
+
+void AvatarInnovador::mover_avatar(Print &print) {
+  std::vector<std::vector<int>> movimientos_validos;
+  
+  // Obtener movimientos válidos (dentro del tablero)
+  for (int i = 0; i < movimientos_l.size(); i++) {
+    int nueva_fila = ubicacion[0] + movimientos_l[i][0];
+    int nueva_columna = ubicacion[1] + movimientos_l[i][1];
+    
+    if (es_movimiento_valido(nueva_fila, nueva_columna)) {
+      movimientos_validos.push_back({nueva_fila, nueva_columna, i});
+    }
+  }
+  
+  if (movimientos_validos.empty()) {
+    std::cout << "No hay movimientos válidos disponibles. El avatar está atrapado." << std::endl;
+    vivo = false;
+    return;
+  }
+  
+  // Mostrar opciones al usuario
+  Mapa mapa_temp; // Para verificar si es camino o abismo
+  mapa_temp.cargar_laberinto();
+  mostrar_movimientos_validos(mapa_temp);
+  
+  // Pedir al usuario que elija
+  int eleccion;
+  do {
+    std::cout << "Elige un movimiento (1-" << movimientos_validos.size() << "): ";
+    std::cin >> eleccion;
+    eleccion--; // Convertir a índice base 0
+  } while (eleccion < 0 || eleccion >= movimientos_validos.size());
+  
+  // Mapear la dirección para el sistema de impresión
+  int movimiento_original = movimientos_validos[eleccion][2];
+  switch (movimiento_original) {
+    case 0: case 1: dirreccion = 0; break; // Movimientos hacia arriba
+    case 2: case 4: dirreccion = 3; break; // Movimientos hacia izquierda
+    case 3: case 5: dirreccion = 1; break; // Movimientos hacia derecha
+    case 6: case 7: dirreccion = 2; break; // Movimientos hacia abajo
+  }
+  
+  print.guardar_recorrido(ubicacion, dirreccion, vivo);
+  
+  // Realizar el movimiento
+  ubicacion[0] = movimientos_validos[eleccion][0];
+  ubicacion[1] = movimientos_validos[eleccion][1];
+  
+  std::cout << "La posicion actual: " << ubicacion[0] << ", " << ubicacion[1] << std::endl;
+}
